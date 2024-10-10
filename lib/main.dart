@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(MyApp());
@@ -26,7 +28,7 @@ class _MapScreenState extends State<MapScreen> {
   String? selectedBuildingInfo;
 
   final List<Map<String, dynamic>> buildings = [
-    {'name': 'Edificio 1', 'info': 'Este es el Edificio 1.', 'rect': Rect.fromLTWH(50, 100, 100, 200)},
+    {'name': 'Edificio 1', 'info': 'Este es el Edificio 1.', 'image': 'assets/images/edificios/1.svg', 'rect': Rect.fromLTWH(3000, 2000, 300, 300)},
     {'name': 'Edificio 2', 'info': 'Este es el Edificio 2.', 'rect': Rect.fromLTWH(200, 300, 150, 100)},
     {'name': 'Edificio 3', 'info': 'Este es el Edificio 3.', 'rect': Rect.fromLTWH(400, 100, 120, 180)},
     {'name': 'Edificio 4', 'info': 'Este es el Edificio 4.', 'rect': Rect.fromLTWH(550, 250, 100, 150)},
@@ -73,16 +75,16 @@ class _MapScreenState extends State<MapScreen> {
   void _searchBuilding() {
     final searchTerm = _searchController.text.trim().toLowerCase();
     Rect rect = Rect.zero;
-    double scale = 2.0; // Nivel de zoom predeterminado
+    double scale = 0.8; // Nivel de zoom predeterminado
 
     switch (searchTerm) {
       case 'edificio 1':
       case '1':
-        rect = Rect.fromLTWH(50, 100, 100, 200);
+rect = Rect.fromLTWH(3000, 2000, 300, 300);
         break;
       case 'edificio 2':
       case '2':
-        rect = Rect.fromLTWH(200, 300, 150, 100);
+        rect = Rect.fromLTWH(200, 300, 1000, 1000);
         break;
       case 'edificio 3':
       case '3':
@@ -245,6 +247,7 @@ final screenSize = MediaQuery.of(context).size;
   FocusScope.of(context).unfocus();
     
   }
+ 
 @override
 Widget build(BuildContext context) {
   return GestureDetector(
@@ -281,49 +284,65 @@ Widget build(BuildContext context) {
                   transformationController: _transformationController,
                   panEnabled: true,
                   scaleEnabled: true,
-                  minScale: 0.5,
-                  maxScale: 4.0,
+                  minScale: 0.01,
+                  maxScale: 20.0,
                   constrained: false,
                   child: Container(
-                    width: 2000,
-                    height: 2000,
+                    width: 10000,
+                    height: 10000,
                     color: Colors.green,
                     child: Stack(
                       children: buildings.map((building) {
-                        return Positioned(
-                          left: building['rect'].left,
-                          top: building['rect'].top,
-                          width: building['rect'].width,
-                          height: building['rect'].height,
-                          child: GestureDetector(
-                            onTap: () {
-                              _showBuildingInfo(
-                                context,
-                                building['name'],
-                                building['info'],
-                              );
-                            },
-                            child: Stack(
-                              children: [
-                                Container(
-                                  color: Color.fromARGB(255, 88, 97, 106),
-                                ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: Text(
-                                    '${buildings.indexOf(building) + 1}',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                        if (building.containsKey('image')) {
+                          // Verifica si la imagen es un SVG
+                          bool isSvg = building['image'].endsWith('.svg');
+                          
+                          return Positioned(
+                            left: building['rect'].left,
+                            top: building['rect'].top,
+                            child: GestureDetector(
+                              onTap: () {
+                                _showBuildingInfo(
+                                  context,
+                                  building['name'],
+                                  building['info'],
+                                );
+                              },
+                              child: isSvg
+                                  ? SvgPicture.asset(
+                                      building['image'],
+                                      width: building['rect'].width,
+                                      height: building['rect'].height,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.asset(
+                                      building['image'],
+                                      width: building['rect'].width,
+                                      height: building['rect'].height,
+                                      fit: BoxFit.cover,
                                     ),
-                                  ),
-                                ),
-                              ],
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          return Positioned(
+                            left: building['rect'].left,
+                            top: building['rect'].top,
+                            child: GestureDetector(
+                              onTap: () {
+                                _showBuildingInfo(
+                                  context,
+                                  building['name'],
+                                  building['info'],
+                                );
+                              },
+                              child: Container(
+                                width: building['rect'].width,
+                                height: building['rect'].height,
+                                color: Colors.blue.withOpacity(0.5),
+                              ),
+                            ),
+                          );
+                        }
                       }).toList(),
                     ),
                   ),
@@ -344,7 +363,8 @@ Widget build(BuildContext context) {
                   return Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(16)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black26,
@@ -379,7 +399,8 @@ Widget build(BuildContext context) {
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16.0),
                                 child: Text(
                                   selectedBuildingInfo!,
                                   style: TextStyle(fontSize: 16),

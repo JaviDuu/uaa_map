@@ -30,6 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_svg: ^1.0.3
 
 
   # The following adds the Cupertino Icons font to your application.
@@ -62,6 +63,95 @@ flutter:
   # assets:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/edificios/1.svg
+    - assets/images/edificios/1a.svg
+    - assets/images/edificios/1b.svg
+    - assets/images/edificios/2.svg
+    - assets/images/edificios/3.svg
+    - assets/images/edificios/4.svg
+    - assets/images/edificios/5.svg
+    - assets/images/edificios/6.svg
+    - assets/images/edificios/6a.svg
+    - assets/images/edificios/7.svg
+    - assets/images/edificios/8.svg
+    - assets/images/edificios/9.svg
+    - assets/images/edificios/10.svg
+    - assets/images/edificios/11.svg
+    - assets/images/edificios/12.svg
+    - assets/images/edificios/13.svg
+    - assets/images/edificios/14.svg
+    - assets/images/edificios/15.svg
+    - assets/images/edificios/16.svg
+    - assets/images/edificios/17.svg
+    - assets/images/edificios/18.svg
+    - assets/images/edificios/19.svg
+    - assets/images/edificios/20.svg
+    - assets/images/edificios/21.svg
+    - assets/images/edificios/21.svg
+    - assets/images/edificios/22.svg
+    - assets/images/edificios/23.svg
+    - assets/images/edificios/24.svg
+    - assets/images/edificios/25.svg
+    - assets/images/edificios/26.svg
+    - assets/images/edificios/27.svg
+    - assets/images/edificios/28.svg
+    - assets/images/edificios/29.svg
+    - assets/images/edificios/30.svg
+    - assets/images/edificios/31.svg
+    - assets/images/edificios/32.svg
+    - assets/images/edificios/33.svg
+    - assets/images/edificios/34.svg
+    - assets/images/edificios/35.svg
+    - assets/images/edificios/36.svg
+    - assets/images/edificios/37.svg
+    - assets/images/edificios/38.svg
+    - assets/images/edificios/39.svg
+    - assets/images/edificios/40.svg
+    - assets/images/edificios/41.svg
+    - assets/images/edificios/42.svg
+    - assets/images/edificios/43.svg
+    - assets/images/edificios/44.svg
+    - assets/images/edificios/45.svg
+    - assets/images/edificios/46.svg
+    - assets/images/edificios/47.svg
+    - assets/images/edificios/48.svg
+    - assets/images/edificios/49.svg
+    - assets/images/edificios/50.svg
+    - assets/images/edificios/51.svg
+    - assets/images/edificios/52.svg
+    - assets/images/edificios/53.svg
+    - assets/images/edificios/54.svg
+    - assets/images/edificios/55.svg
+    - assets/images/edificios/56.svg
+    - assets/images/edificios/57.svg
+    - assets/images/edificios/58.svg
+    - assets/images/edificios/59.svg
+    - assets/images/edificios/60.svg
+    - assets/images/edificios/61.svg
+    - assets/images/edificios/62.svg
+    - assets/images/edificios/63.svg
+    - assets/images/edificios/64.svg
+    - assets/images/edificios/65.svg
+    - assets/images/edificios/66.svg
+    - assets/images/edificios/201.svg
+    - assets/images/edificios/203.svg
+    - assets/images/edificios/204.svg
+    - assets/images/edificios/205.svg
+    - assets/images/edificios/206.svg
+    - assets/images/edificios/210.svg
+    - assets/images/edificios/211.svg
+    - assets/images/edificios/212.svg
+    - assets/images/edificios/213.svg
+    - assets/images/edificios/214.svg
+    - assets/images/edificios/215.svg
+    - assets/images/edificios/219.svg
+    - assets/images/edificios/220.svg
+    - assets/images/edificios/221.svg
+    - assets/images/edificios/222.svg
+    - assets/images/edificios/223.svg
+    - assets/images/edificios/224.svg
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
