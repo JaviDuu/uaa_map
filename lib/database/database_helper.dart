@@ -107,5 +107,5 @@ class DatabaseHelper {
   );
 
   return List.generate(maps.length, (i) => Building.fromMap(maps[i]));
-}
+  }
 }

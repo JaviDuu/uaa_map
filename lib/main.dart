@@ -1,17 +1,25 @@
 // lib/main.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:flutter_markdown/flutter_markdown.dart'; // Importa flutter_markdown
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:uaa_map/models/building.dart';
 import 'package:uaa_map/services/building_service.dart';
+import 'package:uaa_map/screens/loading_screen.dart';
+import 'package:flutter/services.dart' show rootBundle;
+
+// Importar el widget SignsLayer
+import 'package:uaa_map/widgets/signs_layer.dart';
+import 'package:uaa_map/data/signs_data.dart'; // Importar la lista de señales
 
 void main() {
   runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
     runApp(MyApp());
   }, (error, stack) {
-    // Optionally handle uncaught errors
+    // Manejo opcional de errores no capturados
   }, zoneSpecification: ZoneSpecification(
     print: (Zone self, ZoneDelegate parent, Zone zone, String message) {
       if (!message.contains('SVG Warning: Discarding:')) {
@@ -26,15 +34,113 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'University Map',
+      debugShowCheckedModeBanner: false, 
       theme: ThemeData(
         primarySwatch: Colors.green,
       ),
-      home: MapScreen(),
+      home: AppLoader(),
+    );
+  }
+}
+
+class AppLoader extends StatefulWidget {
+  @override
+  _AppLoaderState createState() => _AppLoaderState();
+}
+
+class _AppLoaderState extends State<AppLoader> {
+  late Future<List<Building>> _initializationFuture;
+  final BuildingService buildingService = BuildingService(
+    baseUrl: 'http://172.16.132.229:3000',
+    syncInterval: Duration(seconds: 30),
+  );
+  final Map<String, String> _precachedSvgs = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _initializationFuture = _initializeApp();
+  }
+
+  Future<void> _precacheSvg(String assetName) async {
+    try {
+      if (!_precachedSvgs.containsKey(assetName)) {
+        final String svgString = await rootBundle.loadString(assetName);
+        _precachedSvgs[assetName] = svgString;
+      }
+    } catch (e) {
+      print('Error precaching SVG $assetName: $e');
+    }
+  }
+
+  Future<List<Building>> _initializeApp() async {
+    try {
+      await _precacheSvg('assets/images/background/background_v3.svg');
+      final buildings = await buildingService.getAllBuildings();
+      await Future.wait(
+        buildings.map((building) => _precacheSvg(building.svg)),
+      );
+
+      // Precarga de señales SVG
+      await _precacheSvg('assets/images/signs/bathroom.svg');
+      await _precacheSvg('assets/images/signs/cafeteria.svg');
+      await _precacheSvg('assets/images/signs/estacionamiento.svg');
+
+      return buildings;
+    } catch (e) {
+      print('Error durante la inicialización: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Building>>(
+      future: _initializationFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return LoadingScreen();
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error al cargar la aplicación'),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _initializationFuture = _initializeApp();
+                      });
+                    },
+                    child: Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return MapScreen(
+          initialBuildings: snapshot.data!,
+          precachedSvgs: _precachedSvgs,
+        );
+      },
     );
   }
 }
 
 class MapScreen extends StatefulWidget {
+  final List<Building> initialBuildings;
+  final Map<String, String> precachedSvgs;
+
+  MapScreen({
+    required this.initialBuildings,
+    required this.precachedSvgs,
+  });
+
   @override
   _MapScreenState createState() => _MapScreenState();
 }
@@ -42,24 +148,24 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final TextEditingController _searchController = TextEditingController();
   final TransformationController _transformationController = TransformationController();
-  List<Building> buildings = [];
+  late List<Building> buildings;
   String? selectedBuildingName;
   String? selectedBuildingInfo;
   late BuildingService buildingService;
+  final Map<String, String> _precachedSvgs = {};
 
   @override
   void initState() {
     super.initState();
+    buildings = widget.initialBuildings;
+    _precachedSvgs.addAll(widget.precachedSvgs);
+
     buildingService = BuildingService(
       baseUrl: 'http://192.168.68.119:3000',
       syncInterval: Duration(seconds: 30),
     );
 
-    // Cargar los edificios inmediatamente al iniciar
-    _loadAllBuildings();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Configurar la matriz inicial para centrar y ajustar el nivel de zoom
       final scale = 0.36;
       final dx = (MediaQuery.of(context).size.width / 2) - (3900 / 2 * scale);
       final dy = (MediaQuery.of(context).size.height / 2) - (4600 / 2 * scale);
@@ -70,32 +176,33 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  // Modificar el método de búsqueda para manejar mejor los resultados
+  Widget _buildSvgPicture(String assetName, {double? width, double? height, BoxFit? fit}) {
+    if (_precachedSvgs.containsKey(assetName)) {
+      return SvgPicture.string(
+        _precachedSvgs[assetName]!,
+        width: width,
+        height: height,
+        fit: fit ?? BoxFit.contain,
+      );
+    }
+    return SvgPicture.asset(
+      assetName,
+      width: width,
+      height: height,
+      fit: fit ?? BoxFit.contain,
+    );
+  }
+
   Future<List<Building>> _searchBuildings(String pattern) async {
     if (pattern.isEmpty) {
       return [];
     }
     try {
       final results = await buildingService.searchBuildings(pattern);
-      // Eliminar duplicados basados en el nombre
       return results.toSet().toList();
     } catch (e) {
       print('Error en la búsqueda: $e');
       return [];
-    }
-  }
-
-  Future<void> _loadAllBuildings() async {
-    try {
-      final fetchedBuildings = await buildingService.getAllBuildings();
-      setState(() {
-        buildings = fetchedBuildings;
-      });
-    } catch (e) {
-      print('Error al cargar edificios: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cargar los edificios')),
-      );
     }
   }
 
@@ -116,14 +223,15 @@ class _MapScreenState extends State<MapScreen> {
         });
       },
       child: Scaffold(
-        backgroundColor: Color.fromARGB(255, 89, 166, 8),
+        backgroundColor: Color.fromARGB(255, 37, 158, 26),
         appBar: AppBar(
-          title: Text('University Map'),
+          title: Text('UAA Map'),
         ),
         body: Stack(
           children: [
             Column(
               children: [
+                // Campo de búsqueda con autocompletado
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TypeAheadField<Building>(
@@ -204,6 +312,7 @@ class _MapScreenState extends State<MapScreen> {
                     },
                   ),
                 ),
+                // Mapa interactivo
                 Expanded(
                   child: InteractiveViewer(
                     transformationController: _transformationController,
@@ -217,16 +326,18 @@ class _MapScreenState extends State<MapScreen> {
                       height: 4000,
                       child: Stack(
                         children: [
+                          // SVG de fondo
                           Positioned(
                             left: 0,
                             top: 1000,
-                            child: SvgPicture.asset(
-                              'assets/images/background/background.svg',
+                            child: _buildSvgPicture(
+                              'assets/images/background/background_v3.svg',
                               width: 2000,
                               height: 2000,
                               fit: BoxFit.contain,
                             ),
                           ),
+                          // SVGs de los edificios
                           ...buildings.map((building) {
                             return Positioned(
                               left: building.left,
@@ -239,15 +350,15 @@ class _MapScreenState extends State<MapScreen> {
                                     building.info,
                                   );
                                 },
-                                child: SvgPicture.asset(
+                                child: _buildSvgPicture(
                                   building.svg,
                                   width: building.size,
                                   height: building.size,
-                                  fit: BoxFit.contain,
                                 ),
                               ),
                             );
                           }).toList(),
+                          // Números de los edificios
                           ...buildings.where((b) => b.number != null && b.number!.isNotEmpty).map((building) {
                             return Positioned(
                               left: building.left + (building.numberOffset?.dx ?? 0),
@@ -271,6 +382,12 @@ class _MapScreenState extends State<MapScreen> {
                               ),
                             );
                           }).toList(),
+
+                          // Agrega las señales usando el nuevo widget SignsLayer
+                          SignsLayer(
+                            signs: signs,
+                            precachedSvgs: _precachedSvgs,
+                          ),
                         ],
                       ),
                     ),
@@ -278,6 +395,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
+            // Información del edificio seleccionado
             if (selectedBuildingName != null && selectedBuildingInfo != null)
               GestureDetector(
                 onTap: () {},
@@ -325,12 +443,11 @@ class _MapScreenState extends State<MapScreen> {
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                  child: MarkdownBody( // Usa MarkdownBody en lugar de Text
+                                  child: MarkdownBody(
                                     data: selectedBuildingInfo!,
                                     styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
                                       p: TextStyle(fontSize: 16),
                                       h1: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                                      // Puedes personalizar más estilos aquí si lo deseas
                                     ),
                                   ),
                                 ),

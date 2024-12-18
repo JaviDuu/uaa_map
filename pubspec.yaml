@@ -17,6 +17,7 @@ dependencies:
   path: ^1.8.3
   connectivity_plus: ^5.0.2
   flutter_markdown: ^0.6.10
+  animated_text_kit: ^4.2.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -123,4 +124,8 @@ flutter:
     - assets/images/buildings/223.svg
     - assets/images/buildings/224.svg
     - assets/images/buildings/alberca.svg
-    - assets/images/background/background.svg
+    - assets/images/background/background_v3.svg
+    - assets/images/logos/logo_uaa.png
+    - assets/images/signs/bathroom.svg
+    - assets/images/signs/cafeteria.svg
+    - assets/images/signs/estacionamiento.svg
